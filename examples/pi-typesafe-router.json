@@ -1,0 +1,20 @@
+{
+  "enabled": false,
+  "model": "jev-latest",
+  "timeoutMs": 5000,
+  "minConfidence": 0.3,
+  "candidates": [
+    {
+      "provider": "your-provider",
+      "model": "your-fast-model-id",
+      "description": "Best for writing, explanations, localized edits, and routine coding with clear steps; prefer low latency.",
+      "thinking": ["off", "low", "medium"]
+    },
+    {
+      "provider": "your-provider",
+      "model": "your-strong-model-id",
+      "description": "Best for cross-module design, difficult debugging, concurrency problems, and tasks that require weighing several approaches.",
+      "thinking": ["medium", "high", "xhigh"]
+    }
+  ]
+}

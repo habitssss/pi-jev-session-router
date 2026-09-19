@@ -1,0 +1,33 @@
+{
+  "name": "pi-jev-session-router",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Session-pinned model and thinking selection for Pi using TypeSafe Jev.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/habitssss/pi-jev-session-router.git"
+  },
+  "bugs": "https://github.com/habitssss/pi-jev-session-router/issues",
+  "homepage": "https://github.com/habitssss/pi-jev-session-router#readme",
+  "type": "module",
+  "engines": { "node": ">=22.19.0" },
+  "keywords": ["pi-package"],
+  "pi": { "extensions": ["./src/index.ts"] },
+  "files": ["src", "examples", "README.md"],
+  "scripts": {
+    "test": "node --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm test"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": ">=0.85.1",
+    "@earendil-works/pi-coding-agent": ">=0.85.1"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-ai": "0.85.1",
+    "@earendil-works/pi-coding-agent": "0.85.1",
+    "@types/node": "^22.19.0",
+    "typescript": "~5.9.3"
+  }
+}

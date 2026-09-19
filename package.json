@@ -1,7 +1,6 @@
 {
   "name": "pi-jev-session-router",
   "version": "0.1.0",
-  "private": true,
   "description": "Session-pinned model and thinking selection for Pi using TypeSafe Jev.",
   "license": "MIT",
   "repository": {

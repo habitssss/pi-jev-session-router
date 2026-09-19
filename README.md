@@ -2,7 +2,7 @@
 
 An opt-in Pi extension that calls TypeSafe Jev once for the first task in a session, jointly selects a configured **model and thinking level**, and keeps that selection pinned for the rest of the session.
 
-> **Project identity:** this project uses **`pi-jev-session-router`** because the npm name `pi-typesafe-router` is already used by an unrelated package. It remains intentionally marked `private: true`; do not install `npm:pi-typesafe-router` expecting this extension.
+> **Project identity:** this project uses **`pi-jev-session-router`** because the npm name `pi-typesafe-router` belongs to an unrelated package. Install `npm:pi-jev-session-router`, not `npm:pi-typesafe-router`.
 
 ## Behavior and guarantees
 
@@ -25,24 +25,25 @@ An opt-in Pi extension that calls TypeSafe Jev once for the first task in a sess
 
 ## Installation
 
-Clone the repository to a directory of your choice:
+Install the published npm package into Pi:
+
+```sh
+pi install npm:pi-jev-session-router@0.1.0
+```
+
+Omit `@0.1.0` if you want Pi package updates to follow later releases. For a one-off evaluation without changing Pi's installed-package settings:
+
+```sh
+pi -e npm:pi-jev-session-router@0.1.0
+```
+
+To install from source instead:
 
 ```sh
 git clone https://github.com/habitssss/pi-jev-session-router.git
 cd pi-jev-session-router
 npm ci --include=dev --ignore-scripts
-```
-
-Install it into Pi only when you are ready for Pi to update its extension settings:
-
-```sh
 pi install "$PWD"
-```
-
-For a one-off evaluation without installing it globally:
-
-```sh
-pi -e "$PWD/src/index.ts"
 ```
 
 The extension itself never reads or modifies Pi's global settings. The `pi install` command is a separate, user-initiated Pi operation.
@@ -144,9 +145,9 @@ A **live API validation** is separate, optional, potentially billable, and not p
 
 ## Package and release notes
 
-- `private: true` is intentional and must remain until the maintainer makes a separate npm publishing decision.
-- The npm name `pi-typesafe-router` is already occupied by an unrelated package. Do not publish this project under that name.
-- GitHub identity: `habitssss/pi-jev-session-router`.
+- npm package: `pi-jev-session-router`.
+- The npm name `pi-typesafe-router` is occupied by an unrelated package. Do not use it for this project.
+- GitHub repository: `habitssss/pi-jev-session-router`.
 - The release uses the MIT License.
 
 ## Implementation map

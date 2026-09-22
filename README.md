@@ -1,10 +1,8 @@
 # pi-jev-session-router
 
-> **Experimental — not production-ready.** This is an exploratory implementation of first-task model routing with Jev, not a validated recommendation for automatic model selection. The initial experiment is complete, and the local deployment has been retired. Source and tests remain available for reference and further experimentation. Small-sample evaluations did not establish better task outcomes or overall cost savings. See [experiment conclusions and limitations](docs/experiment-conclusion.md).
+> **Completed experiment — not production-ready.** Active development is paused. Source and tests are retained for reference, not as a validated recommendation for automatic model selection. Small-sample evaluations did not establish better task outcomes or overall cost savings. See [experiment conclusions and limitations](docs/experiment-conclusion.md).
 
 An opt-in Pi extension that calls TypeSafe Jev once for the first task in a session, jointly selects a configured **model and thinking level**, and keeps that selection pinned for the rest of the session.
-
-> **Project identity:** this project uses **`pi-jev-session-router`** because the npm name `pi-typesafe-router` belongs to an unrelated package. Install `npm:pi-jev-session-router`, not `npm:pi-typesafe-router`.
 
 ## Intended behavior
 
@@ -18,28 +16,16 @@ An opt-in Pi extension that calls TypeSafe Jev once for the first task in a sess
 - Missing configuration, no eligible route, missing credentials, low confidence, `stay`, HTTP failures, timeouts, or an unavailable target all retain the current selection. Use `/ts-router on` explicitly to try a later task.
 - Routing is disabled by default. The extension does not approve tools, load skills, edit files, schedule subagents, or proxy generation requests.
 
-## Prerequisites
+## Reproduction environment
 
-- Pi (`@earendil-works/pi-coding-agent`) **0.85.1 or later**. The SDK integration test currently targets 0.85.1.
+- The experiment and SDK integration test used Pi (`@earendil-works/pi-coding-agent`) **0.85.1**. Compatibility with other versions has not been established by this evaluation.
 - Node.js **22.19 or later**.
 - A TypeSafe API key for the routing decision.
 - Existing Pi credentials for every generation model in the candidate list. TypeSafe credentials do not authenticate those models.
 
-## Installation
+## Reproduce from source
 
-Install the published npm package into Pi:
-
-```sh
-pi install npm:pi-jev-session-router@0.1.0
-```
-
-Omit `@0.1.0` if you want Pi package updates to follow later releases. For a one-off evaluation without changing Pi's installed-package settings:
-
-```sh
-pi -e npm:pi-jev-session-router@0.1.0
-```
-
-To install from source instead:
+For further experimentation only; this is not a recommendation to enable the router for daily use.
 
 ```sh
 git clone https://github.com/habitssss/pi-jev-session-router.git
@@ -137,7 +123,7 @@ TypeSafe usage may be billed independently of the selected generation model. A r
 
 There are no automatic retries for timeouts, cancellation, HTTP 401/429/529, malformed responses, or other failures. A process crash before Pi flushes a brand-new session to disk can lose the pre-request attempt marker, but normal reload and resume preserve it. The timeout covers TypeSafe HTTP I/O only; Pi's own `setModel()` authentication flow cannot be cancelled by this extension. If routing is disabled during model application, inspect the current model before continuing.
 
-This project makes no claim about routing accuracy, latency improvement, cache behavior, or cost savings. A five-case live boundary spot check (`docs/routing-boundary-check.md` in the source repository) records individual decisions, confidence, request sizes, and usage; it is not a representative accuracy, latency, or multilingual benchmark. Candidate descriptions should also account for context-window needs; a less expensive model may not fit the active Pi context.
+This project makes no claim about routing accuracy, latency improvement, cache behavior, or cost savings. The [experiment conclusion](docs/experiment-conclusion.md) covers the TiDB evaluation, description-language comparison, and their limitations. The earlier [five-case boundary spot check](docs/routing-boundary-check.md) is a separate synthetic observation, not a representative benchmark. Candidate descriptions should also account for context-window needs; a less expensive model may not fit the active Pi context.
 
 ## Development and validation
 
@@ -146,21 +132,13 @@ The package has no production dependencies beyond its Pi peer dependencies. Deve
 ```sh
 npm ci --include=dev --ignore-scripts
 npm run check
-npm pack --dry-run
 ```
 
 All automated tests are offline. They use synthetic credentials, temporary Pi directories and sessions, mocked TypeSafe responses, and fake generation models. The SDK test loads the TypeScript extension through the real Pi SDK and verifies pre-generation switching, persistence, resume behavior, and manual-override priority without making external requests.
 
 [`test/fixtures/routing-boundaries.ts`](test/fixtures/routing-boundaries.ts) defines five synthetic cases: a known-method bulk edit, a permission-only failure, missing context, an unknown-cause investigation, and interacting high-stakes constraints with failure evidence. Expected roles and effort ranges are evaluation labels, never sent to Jev. Offline tests check evidence preservation, shared instructions, and the exact UTF-8 request boundary; they do **not** establish whether Jev selects the expected role. A live evaluation should report the raw choice, confidence-gated outcome, token usage, and errors separately. Retaining the current model because of low confidence is not a successful classification.
 
-A **live API validation** is separate, optional, potentially billable, and not part of `npm run check`. It must use a real `TYPESAFE_API_KEY` and should only be run with explicit authorization. No live smoke test is required for release preparation.
-
-## Package and release notes
-
-- npm package: `pi-jev-session-router`.
-- The npm name `pi-typesafe-router` is occupied by an unrelated package. Do not use it for this project.
-- GitHub repository: `habitssss/pi-jev-session-router`.
-- The release uses the MIT License.
+A **live API validation** is separate, optional, potentially billable, and not part of `npm run check`. It must use a real `TYPESAFE_API_KEY` and should only be run with explicit authorization.
 
 ## Implementation map
 
@@ -171,3 +149,7 @@ A **live API validation** is separate, optional, potentially billable, and not p
 - `src/index.ts`: Pi events, decision application, manual overrides, and commands.
 
 API references: [TypeSafe HTTP API](https://docs.typesafe.ai/api), [Choice](https://docs.typesafe.ai/primitives/choice), and [Confidence](https://docs.typesafe.ai/confidence).
+
+## License
+
+[MIT](LICENSE).

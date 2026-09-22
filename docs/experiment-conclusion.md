@@ -6,7 +6,7 @@
 
 The project explored whether Jev could choose a model and thinking level from the first task, then keep that choice for the session. It did not establish that this approach improves task outcomes or total costs for interactive coding. It is not a benchmark of Jev's general capabilities or of the generation models.
 
-Installation instructions in the README describe how to reproduce the experiment, not a recommendation to enable the extension for unattended daily use. Resuming development, reinstalling dependencies, enabling routing, and making paid calls remain explicit user decisions.
+Source reproduction instructions in the README describe how to repeat the experiment, not a recommendation to enable the extension for unattended daily use. Resuming development, reinstalling dependencies, enabling routing, and making paid calls remain explicit user decisions.
 
 ## Evaluation scope
 

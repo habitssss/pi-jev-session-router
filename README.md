@@ -1,10 +1,12 @@
 # pi-jev-session-router
 
+> **Experimental — not production-ready.** This is an exploratory implementation of first-task model routing with Jev, not a validated recommendation for automatic model selection. The initial experiment is complete, and the local deployment has been retired. Source and tests remain available for reference and further experimentation. Small-sample evaluations did not establish better task outcomes or overall cost savings. See [experiment conclusions and limitations](docs/experiment-conclusion.md).
+
 An opt-in Pi extension that calls TypeSafe Jev once for the first task in a session, jointly selects a configured **model and thinking level**, and keeps that selection pinned for the rest of the session.
 
 > **Project identity:** this project uses **`pi-jev-session-router`** because the npm name `pi-typesafe-router` belongs to an unrelated package. Install `npm:pi-jev-session-router`, not `npm:pi-typesafe-router`.
 
-## Behavior and guarantees
+## Intended behavior
 
 - The router offers Jev only the explicit `candidates` allowlist, expanded into model/thinking-level pairs. It never discovers or adds providers or models.
 - Model and thinking level are selected together. One model may expose several allowed thinking levels.
@@ -72,6 +74,14 @@ Supported configured levels are `off`, `minimal`, `low`, `medium`, `high`, `xhig
 
 The default `minConfidence` is an initial policy value, not a calibrated success threshold. Confidence describes how concentrated the returned choice distribution is; it does not measure task success.
 
+### Routing evidence and escalation
+
+Descriptions should explain when to select a candidate, when not to select it, and what evidence justifies a more capable option. Shared instructions tell Jev to use these descriptions rather than assumptions about model names or versions. File counts, step counts, code-related keywords, and emphatic wording do not establish difficulty. A known method can remain on an execution-oriented candidate even across many files.
+
+Previous failures count only when explicitly reported in the task. Permissions, network failures, missing dependencies, and missing context are not reasons to upgrade by themselves. Evidence of a reasoning limitation can justify a more capable candidate; clearly difficult work does not need to fail on another model first. Model capability and thinking effort remain separate choices.
+
+These are routing instructions, not a deterministic guarantee or an automatic retry/escalation mechanism. To reconsider a failed task, use `/ts-router on` and include the relevant evidence in a new, self-contained prompt. The router does not fetch prior execution feedback.
+
 ### Environment variables
 
 `TYPESAFE_API_KEY` is the only TypeSafe credential used. Inject it into the environment that launches Pi, preferably through a password manager or another secret-management mechanism:
@@ -121,13 +131,13 @@ The TypeSafe request contains:
 
 The extension does not proactively read or send files, system prompts, conversation history, image contents, or hidden reasoning. Text that you paste into the task is sent as-is; there is no redaction layer. A first input from an extension or slash template is not sent and ends automatic routing for that session, preventing a later mid-task switch.
 
-Forking or explicitly rearming still sends only the new task, not prior history. A context-dependent instruction may therefore result in `stay`. Request JSON larger than **28,000 UTF-8 bytes** is rejected locally without truncation or splitting.
+Forking or explicitly rearming still sends only the new task, not prior history. A context-dependent instruction may therefore result in `stay`. Request JSON larger than **28,000 UTF-8 bytes** is rejected locally without truncation or splitting. The limit includes shared instructions, JSON escaping, and candidate descriptions, which currently repeat for each eligible thinking level; it is not a task-text-only budget.
 
 TypeSafe usage may be billed independently of the selected generation model. A request that times out or is cancelled after transmission may still incur TypeSafe charges. The extension records token counts but does not estimate currency costs, and TypeSafe usage is not included in Pi's default footer cost. Check TypeSafe's current pricing and terms before enabling routing.
 
 There are no automatic retries for timeouts, cancellation, HTTP 401/429/529, malformed responses, or other failures. A process crash before Pi flushes a brand-new session to disk can lose the pre-request attempt marker, but normal reload and resume preserve it. The timeout covers TypeSafe HTTP I/O only; Pi's own `setModel()` authentication flow cannot be cancelled by this extension. If routing is disabled during model application, inspect the current model before continuing.
 
-This project makes no claim about routing accuracy, latency improvement, cache behavior, or cost savings. No live TypeSafe accuracy, latency, or multilingual benchmark has been run. Candidate descriptions should also account for context-window needs; a less expensive model may not fit the active Pi context.
+This project makes no claim about routing accuracy, latency improvement, cache behavior, or cost savings. A five-case live boundary spot check (`docs/routing-boundary-check.md` in the source repository) records individual decisions, confidence, request sizes, and usage; it is not a representative accuracy, latency, or multilingual benchmark. Candidate descriptions should also account for context-window needs; a less expensive model may not fit the active Pi context.
 
 ## Development and validation
 
@@ -140,6 +150,8 @@ npm pack --dry-run
 ```
 
 All automated tests are offline. They use synthetic credentials, temporary Pi directories and sessions, mocked TypeSafe responses, and fake generation models. The SDK test loads the TypeScript extension through the real Pi SDK and verifies pre-generation switching, persistence, resume behavior, and manual-override priority without making external requests.
+
+[`test/fixtures/routing-boundaries.ts`](test/fixtures/routing-boundaries.ts) defines five synthetic cases: a known-method bulk edit, a permission-only failure, missing context, an unknown-cause investigation, and interacting high-stakes constraints with failure evidence. Expected roles and effort ranges are evaluation labels, never sent to Jev. Offline tests check evidence preservation, shared instructions, and the exact UTF-8 request boundary; they do **not** establish whether Jev selects the expected role. A live evaluation should report the raw choice, confidence-gated outcome, token usage, and errors separately. Retaining the current model because of low confidence is not a successful classification.
 
 A **live API validation** is separate, optional, potentially billable, and not part of `npm run check`. It must use a real `TYPESAFE_API_KEY` and should only be run with explicit authorization. No live smoke test is required for release preparation.
 

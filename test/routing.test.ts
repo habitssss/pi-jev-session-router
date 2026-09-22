@@ -5,9 +5,10 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { loadConfig, parseConfig } from "../src/config.ts";
 import { eligibleRoutes } from "../src/routes.ts";
-import { classify, ENDPOINT, parseDecision, requestBody } from "../src/typesafe.ts";
+import { classify, ENDPOINT, MAX_REQUEST_BYTES, parseDecision, requestBody } from "../src/typesafe.ts";
 import { restoreState } from "../src/state.ts";
 import { answer, configuration, large, model, small } from "./helpers.ts";
+import { routingBoundaries } from "./fixtures/routing-boundaries.ts";
 
 const config = parseConfig(configuration);
 const routes = eligibleRoutes(config.candidates, [small, large], [], false);
@@ -54,8 +55,48 @@ test("eligibility respects auth snapshot, scoped models, scoped thinking, images
   assert.equal(eligibleRoutes(basic.candidates, [model("small", false)], [], false).length, 1);
 });
 
-test("oversized prompts are not silently truncated", () => {
-  assert.throws(() => requestBody("中".repeat(10000), routes, "jev-latest", false), /28 KB/);
+test("shared policy uses supplied evidence instead of model names or escalation shortcuts", () => {
+  const instructions = JSON.parse(requestBody("task", routes, "jev-latest", false)).questions.route.instructions;
+  for (const rule of [
+    /context or execution feedback explicitly included/,
+    /supplied descriptions, not prior beliefs about model names or versions/,
+    /Do not assume previous attempts or failures unless explicitly reported/,
+    /Missing permissions, network failures, missing dependencies or insufficient context/,
+    /not code-related keywords, prompt length, file or step counts/,
+    /more capable model does not automatically require higher effort/,
+    /difficult task may select a more capable candidate directly/,
+    /Return only an offered model\/effort option or stay/,
+  ]) assert.match(instructions, rule);
+});
+
+for (const boundary of routingBoundaries) {
+  test(`boundary request preserves evidence without leaking expected labels: ${boundary.id}`, () => {
+    // This checks transport, not Jev's semantic accuracy; there is no mocked verdict.
+    const body = requestBody(boundary.prompt, routes, "jev-latest", false);
+    const req = JSON.parse(body);
+    assert.deepEqual(req.state, { task: boundary.prompt, hasImages: false });
+    assert.deepEqual(req.questions, JSON.parse(requestBody("unrelated task", routes, "jev-latest", false)).questions);
+    assert.equal(body.includes(boundary.rationale), false);
+    assert.equal(body.includes("acceptableRoles"), false);
+    assert.equal(body.includes("acceptableThinking"), false);
+    assert.ok(Buffer.byteLength(body) < MAX_REQUEST_BYTES);
+  });
+}
+
+test("the exact UTF-8 request limit includes JSON escaping and all routing overhead", () => {
+  const prefix = "中文 \"quoted\" \\ path\n";
+  const budget = MAX_REQUEST_BYTES - Buffer.byteLength(requestBody(prefix, routes, "jev-latest", false));
+  const prompt = prefix + "界".repeat(Math.floor(budget / 3)) + "a".repeat(budget % 3);
+  const body = requestBody(prompt, routes, "jev-latest", false);
+  assert.equal(Buffer.byteLength(body), MAX_REQUEST_BYTES);
+  assert.equal(JSON.parse(body).state.task, prompt);
+  assert.throws(() => requestBody(prompt + "a", routes, "jev-latest", false), /28 KB/);
+});
+
+test("oversized prompts fail before any network request and are not silently truncated", async (t) => {
+  const fetch = t.mock.method(globalThis, "fetch", async () => { throw new Error("Unexpected network call"); });
+  await assert.rejects(classify("中".repeat(10000), routes, config, "test-only-key", false, new AbortController().signal), /28 KB/);
+  assert.equal(fetch.mock.callCount(), 0);
 });
 
 test("validates closed-set choice, confidence, full probability distribution and usage", () => {
